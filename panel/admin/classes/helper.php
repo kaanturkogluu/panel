@@ -12,7 +12,89 @@ class Helper
     {
         return isset($_POST[$key]) ? self::cleaner(trim($_POST[$key])) : null;
     }
+    public static function createTable($titles, $columns, $data, $options = [])
+    {
 
+        // 🔹 Tablo  başlıklari
+        // $basliklar = ['ID', "Soru", "Opsiyonlar"];
+
+        // 🔹 Kullanılacak sütunlar (Opsiyonlar dahil edilmedi)
+        // $kolonlar = ['customer_id', 'title'];
+
+        // 🔹 Kullanılacak opsiyonlar (ID sütununun adı 'customer_id' olarak belirtiliyor)
+        // $options = [
+        //     "id_column" => "customer_id",
+        //     "method" => "post",
+        //     "sil" => [
+        //         "router" => Helper::routers('sorulanlar'),
+        //         "mode" => "modeadi"
+        //     ],
+        //     "detay" => Helper::goDashboardPage('sorulanlar/detay.php'),
+        //     "guncelle" => Helper::goDashboardPage('sorulanlar/update&id=')
+        // ];
+
+        // echo createTable($basliklar, $kolonlar, $sorular, $options);
+        if (empty($data)) {
+            return "<table class='table table-bordered'>
+<tr>
+<td  class='alert alert-warning'>
+
+            Tabloda gösterilecek veri bulunamadı.
+            </td></tr>
+            </table>";
+        }
+
+        // 🔹 ID sütunu dinamik olarak belirle
+        $id_column = $options['id_column'] ?? 'id'; // Eğer 'id_column' belirtilmezse varsayılan 'id' olur.
+        $method = htmlspecialchars($options['method'] ?? "post"); // Güvenlik için htmlspecialchars kullanıldı.
+        unset($options['id_column']); // ID sütununu opsiyonlardan kaldırıyoruz.
+
+        $table = "<table class='table table-bordered'>";
+
+        // 🔹 Başlıkları ekle
+        $table .= "<thead><tr>";
+        foreach ($titles as $t) {
+            $table .= "<th>" . htmlspecialchars($t) . "</th>";
+        }
+        $table .= "</tr></thead><tbody>";
+
+        // 🔹 Verileri ekle
+        foreach ($data as $d) {
+            $table .= "<tr>";
+            foreach ($columns as $c) {
+                $table .= "<td>" . htmlspecialchars($d[$c] ?? "N/A") . "</td>";
+            }
+
+            // 🔹 Opsiyonlar (Sil, Detay, Güncelle)
+            if (!empty($options)) {
+                $table .= "<td class='d-flex align-items-center justify-content-center gap-2'>"; // Butonları hizalamak için gap-2 eklendi
+                foreach ($options as $key => $value) {
+                    if ($key == "sil") {
+                        $router = htmlspecialchars($value['router']);
+                        $mode = htmlspecialchars($value['mode']);
+
+                        $table .= "<form action='{$router}' method='{$method}' class='d-inline'>
+                        <input type='hidden' name='mode' value='{$mode}'>
+                        <input type='hidden' name='id' value='" . htmlspecialchars($d[$id_column] ?? '') . "'>
+                        <button type='submit' class='btn btn-danger btn-sm'>Sil</button>
+                    </form>";
+                    }
+                    if ($key == "detay") {
+                        $table .= "<a class='btn btn-info btn-sm' href='" . htmlspecialchars($value) . "'>Detay</a>";
+                    }
+                    if ($key == "guncelle") {
+                        $table .= "<a class='btn btn-warning btn-sm' href='" . htmlspecialchars($value) . htmlspecialchars($d[$id_column] ?? '') . "'>Güncelle</a>";
+                    }
+                }
+                $table .= "</td>";
+            }
+
+            $table .= "</tr>";
+        }
+
+        $table .= "</tbody></table>";
+        return $table;
+    }
     public static function redirectMainPage()
     {
         echo '<meta http-equiv="refresh" content="0;url=' . self::base_panel_url() . '">';
